@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo Task App</title>
+  <link href="/assets/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+  <main class="container py-5" style="max-width: 800px;">
+    <h1 class="mb-4">TODO Task Application</h1>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="h5">Sign up / Sign in</h2>
+        <form id="authForm" class="row g-2">
+          <div class="col-md-4"><input required class="form-control" id="name" placeholder="Name" /></div>
+          <div class="col-md-4"><input required class="form-control" id="email" type="email" placeholder="Email" /></div>
+          <div class="col-md-4"><input required class="form-control" id="password" type="password" placeholder="Password" /></div>
+          <div class="col-12 d-flex gap-2">
+            <button class="btn btn-primary" data-mode="signup" type="submit">Sign up</button>
+            <button class="btn btn-outline-primary" data-mode="signin" type="button" id="signinBtn">Sign in</button>
+            <button class="btn btn-outline-danger ms-auto" type="button" id="signoutBtn">Sign out</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h5">My Todos</h2>
+        <form id="todoForm" class="d-flex gap-2 mb-3">
+          <input id="todoTitle" class="form-control" placeholder="New task" required />
+          <button class="btn btn-success">Add</button>
+        </form>
+        <ul id="todoList" class="list-group"></ul>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function api(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+      });
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Request failed');
+      }
+      return res.status === 204 ? null : res.json();
+    }
+
+    async function refreshTodos() {
+      try {
+        const items = await api('/api/todos');
+        todoList.innerHTML = '';
+        items.forEach((t) => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item d-flex justify-content-between align-items-center';
+          li.innerHTML = `<span class="${t.done ? 'text-decoration-line-through text-muted' : ''}">${t.title}</span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-secondary">Toggle</button>
+              <button class="btn btn-outline-danger">Delete</button>
+            </div>`;
+          li.querySelectorAll('button')[0].onclick = async () => { await api(`/api/todos/${t.id}/toggle`, { method: 'PATCH' }); refreshTodos(); };
+          li.querySelectorAll('button')[1].onclick = async () => { await api(`/api/todos/${t.id}`, { method: 'DELETE' }); refreshTodos(); };
+          todoList.appendChild(li);
+        });
+      } catch {
+        todoList.innerHTML = '<li class="list-group-item text-muted">Sign in to see todos.</li>';
+      }
+    }
+
+    authForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const body = { name: name.value, email: email.value, password: password.value };
+      await api('/api/auth/sign-up/email', { method: 'POST', body: JSON.stringify(body) });
+      refreshTodos();
+    };
+
+    signinBtn.onclick = async () => {
+      const body = { email: email.value, password: password.value };
+      await api('/api/auth/sign-in/email', { method: 'POST', body: JSON.stringify(body) });
+      refreshTodos();
+    };
+
+    signoutBtn.onclick = async () => {
+      await api('/api/auth/sign-out', { method: 'POST' });
+      refreshTodos();
+    };
+
+    todoForm.onsubmit = async (e) => {
+      e.preventDefault();
+      await api('/api/todos', { method: 'POST', body: JSON.stringify({ title: todoTitle.value }) });
+      todoTitle.value = '';
+      refreshTodos();
+    };
+
+    refreshTodos();
+  </script>
+</body>
+</html>
