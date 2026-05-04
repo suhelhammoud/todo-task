@@ -1,0 +1,23 @@
+{
+  "name": "todo-task",
+  "version": "1.0.0",
+  "description": "Todo app with Express, Drizzle ORM, Better Auth, SQLite, and Bootstrap",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "better-auth": "^1.0.0",
+    "bootstrap": "^5.3.3",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.44.0",
+    "express": "^4.21.2",
+    "better-sqlite3": "^11.8.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.4"
+  }
+}
